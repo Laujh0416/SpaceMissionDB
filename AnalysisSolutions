@@ -1,0 +1,143 @@
+ This is a space mission project
+ Below are the solution created by @laujh3131 (Instagram) or laujh0416 (Linkedin) based on the dataset (decoded).
+ Steps -> Decoding -> Build RDBMS -> Analysis
+
+#1
+CREATE TABLE Company AS
+SELECT DISTINCT company as name, rocket as rocket_name, mission as mission_name
+FROM spacemission;
+
+CREATE TABLE Rocket AS
+SELECT DISTINCT rocket as name, rocketstatus as status, price
+FROM spacemission;
+
+CREATE TABLE Mission AS
+SELECT DISTINCT mission as name, missionstatus as status, date, time
+FROM spacemission;
+
+CREATE TABLE Location AS
+SELECT DISTINCT location as name
+FROM spacemission;
+
+#2
+ALTER TABLE Company
+ADD id SERIAL PRIMARY KEY;
+
+ALTER TABLE Rocket
+ADD id SERIAL PRIMARY KEY;
+
+ALTER TABLE Mission
+ADD id SERIAL PRIMARY KEY;
+
+ALTER TABLE Location
+ADD id SERIAL PRIMARY KEY;
+
+#3
+ALTER TABLE Company
+ADD rocket_id Int;
+
+ALTER TABLE Company
+ADD mission_id Int;
+
+ALTER TABLE Company
+ADD location_id Int;
+
+UPDATE Company
+SET rocket_id = Rocket.id
+FROM Rocket;
+
+UPDATE Company
+SET mission_id = Mission.id
+FROM Mission;
+
+UPDATE Company
+SET location_id = Location.id
+FROM Location;
+
+#4
+ALTER TABLE Company
+ADD FOREIGN KEY (rocket_id)
+REFERENCES Rocket(id)
+
+ALTER TABLE Company
+ADD FOREIGN KEY (mission_id)
+REFERENCES Mission(id)
+
+ALTER TABLE Company
+ADD FOREIGN KEY (location_id)
+REFERENCES Location(id)
+
+#5
+CREATE INDEX company_name_idx
+ON Company(name);
+
+CREATE INDEX rocket_name_idx
+ON Rocket(name);
+
+CREATE INDEX mission_name_idx
+ON Mission(name);
+
+CREATE INDEX mission_status_idx
+ON Mission(status);
+
+CREATE INDEX Location_name_idx
+ON Location(name);
+
+#6 The ranking of number of rockets, with the active status, from each company
+SELECT COUNT(Rocket.status) as num_rocket_active, Company.name as company_name
+FROM Company, Rocket, Location
+GROUP BY Company.name, Rocket.status
+HAVING Rocket.status = 'Active'
+ORDER BY COUNT(Rocket.status) DESC;
+
+#7 The ranking of number of rockets, with the retired status, from each company
+SELECT COUNT(Rocket.status) as num_rocket_active, Company.name as company_name
+FROM Company, Rocket, Location
+GROUP BY Company.name, Rocket.status
+HAVING Rocket.status != 'Active'
+ORDER BY COUNT(Rocket.status) DESC;
+
+#8 The ranking of missions conducted by each company
+SELECT COUNT(Mission.status), Company.name as company_name
+FROM Company, Mission
+GROUP BY Company.name, Mission.status
+ORDER BY COUNT(Mission.status) DESC;
+
+#9 The ranking of missions conducted, successfully, by each company
+SELECT COUNT(Mission.status), Company.name as company_name
+FROM Company, Mission
+GROUP BY Company.name, Mission.status
+HAVING Mission.status = 'Success'
+ORDER BY COUNT(Mission.status) DESC;
+
+#10 The ranking of number of rockets own by each company
+SELECT COUNT(Rocket.id) as num_rocket, Company.name as company_name
+FROM Company, Rocket
+GROUP BY Company.name
+ORDER BY COUNT(Rocket.id) DESC;
+
+#11 The ranking of the number of missions conducted by each company in certain location
+SELECT Company.name as company_name, Location.name as location_name, COUNT(Mission.name)
+FROM Company, Location, Mission
+GROUP BY Company.name, Location.name, Mission.name
+ORDER BY COUNT(Mission.name) DESC;
+
+#12 The ranking of the number of missions conducted by the rocket from each company
+SELECT Company.name as company_name, Rocket.name as rocket_name, COUNT(Mission.name)
+FROM Company, Rocket, Mission
+GROUP BY Company.name, Rocket.name, Mission.name
+ORDER BY COUNT(Mission.name) DESC;
+
+#13 The ranking of the number of missions conducted by each company from 2020 onward
+SELECT Company.name, COUNT(Rocket.name), Rocket.status, Mission.date, Mission.name
+FROM Company, Rocket, Mission
+GROUP BY Company.name, Rocket.status, Mission.date, Mission.name
+HAVING Rocket.status = 'Active' AND Mission.date > '2020-01-01'
+ORDER BY COUNT(Rocket.name) DESC;
+
+#14 The lastest (2022-08-19) missions conducted by each company
+SELECT Company.name, COUNT(Rocket.name), Rocket.status, Mission.date, Mission.name
+FROM Company, Rocket, Mission
+GROUP BY Company.name, Rocket.status, Mission.date, Mission.name
+HAVING Rocket.status  = 'Active' AND Mission.date > '2022-01-01'
+ORDER BY Mission.date DESC;
